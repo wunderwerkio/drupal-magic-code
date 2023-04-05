@@ -1,0 +1,21 @@
+{
+    "name": "drupal/magic_code",
+    "description": "Generate magic-codes to verify various operations.",
+    "type": "drupal-module",
+    "require": {
+      "php": ">=8.0",
+      "drupal/consumers": "^1.16",
+      "drupal/verification": "1.0.x-dev@dev"
+    },
+    "require-dev": {
+      "phpspec/prophecy-phpunit": "^2"
+    },
+    "license": "GPL-2.0-or-later",
+    "extra": {
+        "drush": {
+            "services": {
+                "drush.services.yml": "^9 || ^10"
+            }
+        }
+    }
+}

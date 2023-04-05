@@ -1,0 +1,10 @@
+code_ttl: 1800
+flood:
+  ip_limit: 50
+  ip_window: 3600
+  user_limit: 5
+  user_window: 21600
+login_permitted_operations:
+  - 'login'
+  - 'register'
+  - 'set-password'

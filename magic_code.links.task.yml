@@ -1,0 +1,4 @@
+entity.magic_code.collection:
+  route_name: entity.magic_code.collection
+  base_route: oauth2_token.settings
+  title: 'Magic Codes'

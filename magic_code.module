@@ -1,0 +1,176 @@
+<?php
+
+/**
+ * @file
+ * Module file for the magic_code module.
+ */
+
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\magic_code\MagicCodeCollector;
+use Drupal\magic_code\MagicCodeManagerInterface;
+use Drupal\user\UserInterface;
+
+/**
+ * Implements hook_cron().
+ */
+function magic_code_cron() {
+  /** @var MagicCodeCollector $collector */
+  $collector = \Drupal::service('magic_code.collector');
+  $logger = \Drupal::logger('magic_code');
+
+  $limit = 0;
+
+  // Delete a batch of expired codes.
+  if (!empty($expiredCodes = $collector->collectExpired($limit))) {
+    $count = count($expiredCodes);
+    $collector->deleteMultipleMagicCodes($expiredCodes);
+
+    $logger->notice('Deleted @count expired magic codes in cron.', [
+      '@count' => $count,
+    ]);
+  }
+}
+
+/**
+ * Implements hook_entity_update().
+ *
+ * Revokes all magic codes for updated user.
+ */
+function magic_code_entity_update(EntityInterface $entity) {
+  if (!$entity instanceof UserInterface) {
+    return;
+  }
+
+  /** @var MagicCodeCollector $collector */
+  $collector = \Drupal::service('magic_code.collector');
+  $logger = \Drupal::logger('magic_code');
+
+  if (!empty($codes = $collector->collectForAccount($entity))) {
+    $count = count($codes);
+
+    foreach ($codes as $code) {
+      $code->revoke()->save();
+    }
+
+    $logger->notice('Revoked @count magic codes for user @id due to user entity update.', [
+      '@count' => $count,
+      '@id' => $entity->id(),
+    ]);
+  }
+}
+
+/**
+ * Implements hook_mail_alter().
+ */
+function magic_code_mail_alter(&$message) {
+  if (strpos($message['id'], 'user_') === 0) {
+    _magic_code_replace_mail_tokens($message);
+  }
+}
+
+/**
+ * Replace custom tokens in mail message.
+ *
+ * This function can be used by other modules.
+ */
+function _magic_code_replace_mail_tokens(&$message) {
+  $variables = ['user' => $message['params']['account']];
+
+  // @see user_mail().
+  $languageManager = \Drupal::languageManager();
+  $langcode = $message['langcode'];
+  $language = $languageManager->getLanguage($langcode);
+  $originalLanguage = $languageManager->getConfigOverrideLanguage();
+  $languageManager->setConfigOverrideLanguage($language);
+  $tokenOptions = [
+    'langcode' => $langcode,
+    'key' => $message['key'],
+    'clear' => TRUE,
+    'body' => $message['body'],
+    'callback' => 'magic_code_user_mail_tokens',
+  ];
+
+  // Replace tokens in the message body.
+  foreach($message['body'] as $key => $bodyStr) {
+    $message['body'][$key] = \Drupal::token()->replace($bodyStr, $variables, $tokenOptions);
+  }
+
+  $languageManager->setConfigOverrideLanguage($originalLanguage);
+}
+
+/**
+ * Custon token callback for user mail tokens.
+ */
+function magic_code_user_mail_tokens(&$replacements, $data, $options) {
+  $negotiator = \Drupal::service('consumer.negotiator');
+  $consumer = $negotiator->negotiateFromRequest();
+  $body = $options['body'];
+
+  if (isset($data['user']) && isset($consumer)) {
+    $operations = _magic_code_get_available_tokens();
+
+    /** @var MagicCodeManagerInterface $repository */
+    $manager = \Drupal::service('magic_code.manager');
+
+    $tokens = [
+      'magic-code-login_mail-only' => ['operation' => 'login'],
+      'magic-code-register_mail-only' => ['operation' => 'register'],
+      'magic-code-reset-password_mail-only' => ['operation' => 'reset-password'],
+      'magic-code-user-cancel_mail-only' => ['operation' => 'user-cancel'],
+    ];
+
+    $tokens = [];
+
+    foreach ($operations as $operation) {
+      $key = sprintf('magic-code-%s_mail-only', $operation);
+      $tokens[$key] = ['operation' => $operation];
+    }
+
+    $options = [
+      'langcode' => $options['langcode'],
+      'key' => $options['key'],
+    ];
+
+    // Register token replacements.
+    foreach ($tokens as $tokenName => $params) {
+      $operation = $params['operation'];
+      $fullToken = '[user:'. $tokenName . ']';
+
+      // Only replace token, if it actually exists, otherwise we
+      // would generate magic codes that are not used.
+      $match = FALSE;
+      foreach($body as $bodyStr) {
+        if (str_contains($bodyStr, $fullToken)) {
+          $match = TRUE;
+          break;
+        }
+      }
+
+      if (!$match) {
+        continue;
+      }
+
+      $email = array_key_exists('email', $params) ? $params['email'] : NULL;
+      $code = $manager->createNew($operation, $data['user'], $consumer, $email);
+
+      $replacements[$fullToken] = $code->get('value')->getString();
+    }
+  }
+}
+
+/**
+ * Get the available operations for which a
+ * token should be created.
+ */
+function _magic_code_get_available_tokens() {
+  $operations = [
+    'login',
+    'register',
+    'set-password',
+    'cancel-account',
+  ];
+
+  \Drupal::moduleHandler()->alter('magic_code_user_mail_token_operations', $operations);
+
+  return $operations;
+}

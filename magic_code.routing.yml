@@ -1,0 +1,23 @@
+entity.magic_code.canonical:
+  path: '/admin/config/people/magic_code/magic_code/{magic_code}'
+  defaults:
+    _entity_view: 'magic_code'
+    _title: 'Magic Code'
+  requirements:
+    _entity_access: 'magic_code.view'
+
+entity.magic_code.collection:
+  path: '/admin/config/people/magic_code/magic_code'
+  defaults:
+    _entity_list: 'magic_code'
+    _title: 'Magic Code list'
+  requirements:
+    _permission: 'administer magic_code entities'
+
+entity.magic_code.delete_form:
+  path: '/admin/config/people/magic_code/magic_code/{magic_code}/delete'
+  defaults:
+    _entity_form: magic_code.delete
+    _title: 'Delete Magic Code'
+  requirements:
+    _entity_access: 'magic_code.delete'

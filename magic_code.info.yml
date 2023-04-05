@@ -1,0 +1,8 @@
+name: Magic Code
+type: module
+description: This modules allows the use of a "Magic Code" to verify actions such as login, password or email change.
+core_version_requirement: ^9 || ^10
+package: Authentication
+dependencies:
+  - consumers
+  - verification

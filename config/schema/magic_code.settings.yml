@@ -1,0 +1,28 @@
+magic_code.settings:
+  type: config_object
+  label: 'Magic Code settings'
+  mapping:
+    code_ttl:
+      type: integer
+      label: 'Magic Code TTL'
+    flood:
+      type: mapping
+      label: 'Flood control'
+      mapping:
+        ip_limit:
+          type: integer
+          label: 'IP Limit'
+        ip_window:
+          type: integer
+          label: 'IP Window'
+        user_limit:
+          type: integer
+          label: 'User Limit'
+        user_window:
+          type: integer
+          label: 'User Window'
+    login_permitted_operations:
+      type: sequence
+      label: 'List of operations that permit a login before the operation is executed'
+      sequence:
+        type: string

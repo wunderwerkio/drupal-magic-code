@@ -1,0 +1,19 @@
+services:
+  logger.channel.magic_code:
+    parent: logger.channel_base
+    arguments: ['magic_code']
+
+  magic_code.manager:
+    class: Drupal\magic_code\MagicCodeManager
+    arguments:
+      - '@entity_type.manager'
+      - '@config.factory'
+      - '@datetime.time'
+      - '@flood'
+      - '@logger.channel.magic_code'
+
+  magic_code.collector:
+    class: Drupal\magic_code\MagicCodeCollector
+    arguments:
+      - '@entity_type.manager'
+      - '@datetime.time'

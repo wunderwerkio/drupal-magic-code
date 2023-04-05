@@ -1,0 +1,13 @@
+<?php
+
+/**
+ * @file
+ * Module file.
+ */
+
+/**
+ * Implement hook_magic_code_user_mail_token_operations_alter().
+ */
+function magic_code_test_magic_code_user_mail_token_operations_alter(&$operations) {
+  $operations[] = 'added-operation';
+}

@@ -1,0 +1,8 @@
+name: Magic Code Test
+type: module
+description: This module is for testing the magic code module.
+core_version_requirement: ^9 || ^10
+package: Testing
+dependencies:
+  - magic_code
+
