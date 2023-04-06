@@ -1,5 +1,8 @@
 # Magic Code
 
+[![Lint & Test](https://github.com/wunderwerkio/drupal-magic-code/actions/workflows/main.yml/badge.svg)](https://github.com/wunderwerkio/drupal-magic-code/actions/workflows/main.yml)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=wunderwerkio_drupal-magic-code&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=wunderwerkio_drupal-magic-code)
+
 The Magic Code Drupal module integrates with the [Verification API](https://github.com/wunderwerkio/drupal-verification) and adds a `VerificationProvider` that handles verification via so-called **Magic Codes** (short, alphanumeric codes that the user may also type manually).
 
 **Table of Contents:**
