@@ -1,11 +1,11 @@
 name: Lint & Test
 
 on:
-  - push
-  - pull_request
-  - pull_request_target
-
-concurrency: ${{ github.workflow }}-${{ github.ref }}
+  push:
+    branches:
+      - 1.0.x
+  pull_request:
+    types: [opened, synchronize, reopened]
 
 jobs:
   lint:
@@ -19,29 +19,24 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Cache Composer dependencies
-        uses: actions/cache@v3
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
         with:
-          path: |
-            /tmp/composer-cache
-            ./web
-            ./vendor
-            ./composer.spoons.json
-            ./composer.spoons.lock
-          key: ${{ runner.os }}-${{ hashFiles('**/composer.json') }}-php${{ matrix.php }}-drupal${{ matrix.drupal }}
+          php-version: ${{ matrix.php }}
+
+      - name: Cache dependencies
+        uses: wunderwerkio/cache-composer@main
+        with:
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.spoons.lock') }}
 
       - name: Install drupal
-        uses: wunderwerkio/github-action-composer@v1-beta
+        uses: wunderwerkio/setup-drupal-spoons@main
         with:
-          php_version: ${{ matrix.php }}
-          setup_drupal: yes
-          drupal_core_constraint: '^${{ matrix.drupal }}'
+          drupal-core-constraint: "^${{ matrix.drupal }}"
 
       - name: Lint
-        uses: wunderwerkio/github-action-composer@v1-beta
-        with:
-          php_version: ${{ matrix.php }}
-          command: phpcs
+        run: composer run-script phpcs
+
   test:
     name: Test
     runs-on: ubuntu-latest
@@ -57,26 +52,54 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Cache Composer dependencies
-        uses: actions/cache@v3
+      - name: Setup PHP with Xdebug
+        uses: shivammathur/setup-php@v2
         with:
-          path: |
-            /tmp/composer-cache
-            ./web
-            ./vendor
-            ./composer.spoons.json
-            ./composer.spoons.lock
-          key: ${{ runner.os }}-${{ hashFiles('**/composer.json') }}-php${{ matrix.php }}-drupal${{ matrix.drupal }}
+          php-version: ${{ matrix.php }}
+          coverage: xdebug
+
+      - name: Cache dependencies
+        uses: wunderwerkio/cache-composer@main
+        with:
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.spoons.lock') }}
 
       - name: Install drupal
-        uses: wunderwerkio/github-action-composer@v1-beta
+        uses: wunderwerkio/setup-drupal-spoons@main
         with:
-          php_version: ${{ matrix.php }}
-          setup_drupal: yes
-          drupal_core_constraint: '^${{ matrix.drupal }}'
+          drupal-core-constraint: "^${{ matrix.drupal }}"
 
       - name: Test
-        uses: wunderwerkio/github-action-composer@v1-beta
+        run: composer run-script unit -- --coverage-clover=coverage.xml --coverage-filter src --coverage-filter modules
+
+      - name: Adjust coverage
+        if: matrix.drupal == '10' && matrix.php == '8.1'
+        run: |
+          mv web/coverage.xml coverage.xml
+          sed -i 's@'$GITHUB_WORKSPACE'@/github/workspace/@g' coverage.xml
+
+      - name: Upload coverage
+        if: matrix.drupal == '10' && matrix.php == '8.1'
+        uses: actions/upload-artifact@v3
         with:
-          php_version: ${{ matrix.php }}
-          command: unit
+          name: coverage
+          path: coverage.xml
+
+  sonarcloud:
+    name: Sonar Cloud
+    runs-on: ubuntu-latest
+    needs: ['test']
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Download coverage
+        uses: actions/download-artifact@v3
+        with:
+          name: coverage
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
