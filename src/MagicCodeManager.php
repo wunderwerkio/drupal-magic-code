@@ -134,7 +134,7 @@ class MagicCodeManager implements MagicCodeManagerInterface {
       ->condition('auth_user_id', $user->id())
       ->condition('email', $targetEmail)
       ->condition('operation', $operation)
-      ->condition('client', ['target_id' => $consumer->id()])
+      ->condition('client', $consumer->id())
       ->condition('status', TRUE)
       ->condition('expire', $this->time->getRequestTime(), '>=');
 
