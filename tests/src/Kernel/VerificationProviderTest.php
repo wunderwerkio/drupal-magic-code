@@ -7,8 +7,8 @@ namespace Drupal\Tests\magic_code\Kernel;
 use Drupal\consumers\Entity\Consumer;
 use Drupal\KernelTests\Core\Entity\EntityKernelTestBase;
 use Drupal\magic_code\MagicCodeManagerInterface;
-use Drupal\verification\Service\RequestVerifier;
 use Drupal\Tests\verification\Traits\VerificationTestTrait;
+use Drupal\verification\Service\RequestVerifier;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
