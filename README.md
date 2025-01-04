@@ -1,3 +1,10 @@
+# Important Notice
+
+The version control was moved to Drupal's GitLab instance!  
+See https://www.drupal.org/project/magic_code for more info!
+
+---
+
 # Magic Code
 
 [![Lint & Test](https://github.com/wunderwerkio/drupal-magic-code/actions/workflows/main.yml/badge.svg)](https://github.com/wunderwerkio/drupal-magic-code/actions/workflows/main.yml)
